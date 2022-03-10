@@ -1,33 +1,34 @@
 import com.sforce.soap.partner.Connector;
 import com.sforce.soap.partner.PartnerConnection;
+import com.sforce.soap.partner.fault.LoginFault;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
+import java.util.*;
+
 
 public class SFConnect {
-    public static void main(String[] args) throws ConnectionException, IOException {
-
-        Properties properties = getProperties();
-
-        String login_url = properties.getProperty("SF_BASE_URL");
-        String username = properties.getProperty("USERNAME");
-        String pass = properties.getProperty("PASSWORD");
-        ConnectorConfig config = new ConnectorConfig();
-        config.setUsername(username);
-        config.setPassword(pass);
-        config.setAuthEndpoint(login_url+"/services/Soap/u/49.0");
-        PartnerConnection connection = Connector.newConnection(config);
-        System.out.println(connection.getUserInfo().toString());
-    }
-
-    public static Properties getProperties() throws IOException {
+    private static final String AUTH_ENDPOINT = "%s/services/Soap/u/49.0";
+    public static void main(String[] args) throws IOException {
         Properties properties = new Properties();
-        try (InputStream is = SFConnect.class.getResourceAsStream("application.properties")) {
-            properties.load(is);
+        properties.load(SFConnect.class.getResourceAsStream("/application.properties"));
+        try {
+            String login_url = properties.getProperty("SF_BASE_URL");
+            String username = properties.getProperty("USERNAME");
+            String pass = properties.getProperty("PASSWORD");
+            ConnectorConfig config = new ConnectorConfig();
+            config.setUsername(username);
+            config.setPassword(pass);
+            config.setAuthEndpoint(String.format(AUTH_ENDPOINT, login_url));
+            PartnerConnection connection = Connector.newConnection(config);
+            System.out.println(connection.getConfig().getSessionId());
+        }catch (ConnectionException c) {
+            System.out.println("Message: " + c.getMessage());
+            System.out.println("LocalizedMessage: " + c.getLocalizedMessage());
+            System.out.println("LoginFault: " + ((LoginFault) c).getExceptionMessage());
         }
-        return properties;
+
     }
 }
+ 
